@@ -31,8 +31,8 @@ public class JwtUtil {
                 .parserBuilder()
                 .setSigningKey(key)
                 .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public Date getExpirationDate(String token){

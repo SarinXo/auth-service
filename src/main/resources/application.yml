@@ -5,6 +5,18 @@ spring:
   application:
     name: auth-service
 
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8888/eureka/
+  renewalPercentThreshold: 0.85
+
 jwt:
   secret: giGacHadsecretSSSgulRank
   expiration: 86400
+
+service:
+  user-service:
+    get-user: http://user-service/users
+    post-user: http://user-service/users
+    is-exist: http://user-service/users/is-exist
