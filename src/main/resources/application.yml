@@ -12,7 +12,7 @@ eureka:
   renewalPercentThreshold: 0.85
 
 jwt:
-  secret: giGacHadsecretSSSgulRank
+  secret: giGacHadsecretSSSgulRankNoThisKeyWasTooSmallAndIaArtificiallyLengthenedIt
   expiration: 86400
 
 service:
@@ -20,3 +20,4 @@ service:
     get-user: http://user-service/users
     post-user: http://user-service/users
     is-exist: http://user-service/users/is-exist
+    is-correct: http://user-service/users/is-correct

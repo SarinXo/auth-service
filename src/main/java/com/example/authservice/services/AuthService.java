@@ -1,9 +1,9 @@
 package com.example.authservice.services;
 
-import com.example.authservice.entities.AuthRequest;
-import com.example.authservice.entities.AuthResponse;
-import com.example.authservice.entities.User;
-import org.apache.sshd.common.config.keys.loader.openssh.kdf.BCrypt;
+import com.example.authservice.dto.AuthRequest;
+import com.example.authservice.dto.AuthResponse;
+import com.example.authservice.dto.User;
+import com.example.authservice.handlers.exceptions.AuthError;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,43 +17,56 @@ public class AuthService {
     private final String getUserLink;
     private final String postUserLink;
     private final String isExistUserLink;
+    private final String isCorrectUserLink;
 
     @Autowired
     public AuthService(RestTemplate restTemplate,
                        JwtUtil jwtUtil,
                        @Value("${service.user-service.get-user}") String getUserLink,
                        @Value("${service.user-service.post-user}") String postUserLink,
-                       @Value("${service.user-service.is-exist}") String isExistUserLink) {
+                       @Value("${service.user-service.is-exist}") String isExistUserLink,
+                       @Value("${service.user-service.is-correct}") String isCorrectUserLink) {
         this.restTemplate = restTemplate;
         this.jwtUtil = jwtUtil;
         this.getUserLink = getUserLink;
         this.postUserLink = postUserLink;
         this.isExistUserLink = isExistUserLink;
+        this.isCorrectUserLink = isCorrectUserLink;
     }
 
     public AuthResponse register(AuthRequest request) {
-
         if(isExistUser(request.getLogin())) {
-            throw new RuntimeException("this user already in database");
+            throw new AuthError("this user already in database");
         }
-        request.setPassword(BCrypt.hashpw(request.getPassword(), BCrypt.gensalt()));
-        User registeredUser = restTemplate.postForObject(postUserLink, request, User.class);
 
-        String accessToken = jwtUtil.generate(registeredUser.getLogin(), registeredUser.getRole(), "ACCESS");
-        String refreshToken = jwtUtil.generate(registeredUser.getLogin(), registeredUser.getRole(), "REFRESH");
-
-        return new AuthResponse(accessToken, refreshToken);
-
+        return getToken(request);
     }
 
     private boolean isExistUser(String login){
-        return Boolean.TRUE.equals(restTemplate.postForObject(postUserLink, login, Boolean.class));
+        return Boolean.TRUE.equals(restTemplate.getForObject(isExistUserLink + "/" + login, Boolean.class));
     }
 
+    public AuthResponse login(AuthRequest request) {
+        if(!isCorrectData(request)){
+            throw new AuthError("wrong login or password");
+        }
 
-    public AuthResponse login(AuthRequest authRequest) {
-        return null;
+        return getToken(request);
     }
+
+    private boolean isCorrectData(AuthRequest request){
+        return Boolean.TRUE.equals(restTemplate.postForObject(isCorrectUserLink, request, Boolean.class));
+    }
+
+    private AuthResponse getToken(AuthRequest request){
+        User user = restTemplate.getForObject(getUserLink + "/" + request.getLogin(), User.class);
+
+        String accessToken = jwtUtil.generate( user.getLogin(), user.getRole(), "ACCESS");
+        String refreshToken = jwtUtil.generate(user.getLogin(), user.getRole(), "REFRESH");
+
+        return new AuthResponse(accessToken, refreshToken);
+    }
+
 
 
 }
