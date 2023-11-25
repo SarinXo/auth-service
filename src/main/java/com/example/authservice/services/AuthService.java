@@ -38,8 +38,8 @@ public class AuthService {
         if(isExistUser(request.getLogin())) {
             throw new AuthError("this user already in database");
         }
-
-        return getToken(request);
+        User user = restTemplate.postForObject(postUserLink, request, User.class);
+        return generateToken(user, request);
     }
 
     private boolean isExistUser(String login){
@@ -50,23 +50,20 @@ public class AuthService {
         if(!isCorrectData(request)){
             throw new AuthError("wrong login or password");
         }
-
-        return getToken(request);
+        User user = restTemplate.getForObject(getUserLink + "/" + request.getLogin(), User.class);
+        return generateToken(user, request);
     }
 
     private boolean isCorrectData(AuthRequest request){
         return Boolean.TRUE.equals(restTemplate.postForObject(isCorrectUserLink, request, Boolean.class));
     }
 
-    private AuthResponse getToken(AuthRequest request){
-        User user = restTemplate.getForObject(getUserLink + "/" + request.getLogin(), User.class);
+    private AuthResponse generateToken(User user, AuthRequest request){
 
         String accessToken = jwtUtil.generate( user.getLogin(), user.getRole(), "ACCESS");
         String refreshToken = jwtUtil.generate(user.getLogin(), user.getRole(), "REFRESH");
 
         return new AuthResponse(accessToken, refreshToken);
     }
-
-
 
 }
